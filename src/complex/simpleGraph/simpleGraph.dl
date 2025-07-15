@@ -8,13 +8,9 @@ addEdge id label node1 node2
 removeEdgeV id label
 removedEfgeK id
 
-addNodeMD id key value
-removeNodeMDV id key value
-removeNodeMDK id key
-
-addEdgeMD id key value
-removeEdgeMDV id key value
-removeEdgeMDK id key
+addMD id key value
+removeMDV id key value
+removeMDK id key
 */
 .decl op(e:number, y: symbol, id: symbol, keyLabel: symbol, value: symbol, end: symbol)
 .input op
