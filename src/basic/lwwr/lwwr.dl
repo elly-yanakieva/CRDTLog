@@ -1,0 +1,27 @@
+.decl op(e:number, y: symbol, z: symbol)
+.input op
+
+//x is visible to y
+.decl vis(x:number, y:number)
+.input vis
+
+//arbitration order: e preceedes p
+.decl ao(x:number, y:number)
+.input ao
+
+.decl state(x: symbol)
+.output state
+
+.decl arbitration(e: number, p: number)
+
+arbitration(e, p) :- ao(e, p).
+arbitration(e, p) :- arbitration(e, y), ao(y, p).
+
+.decl laterAoOp(e: number, p: number, n: symbol)
+laterAoOp(e, p, n) :- op(e, _, _), op(p, n, _), arbitration(e, p), e!=p.
+
+.decl maxAoOp(e: number)
+maxAoOp(e) :- op(e, _, _), !laterAoOp(e, _, "write").
+
+
+state(x) :- op(e, "write", x), maxAoOp(e).

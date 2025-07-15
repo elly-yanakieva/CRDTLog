@@ -1,0 +1,32 @@
+.decl op(e:number, y: symbol, key1: symbol, key2: symbol, value: symbol)
+.input op
+
+//x is visible to y
+.decl vis(x:number, y:number)
+.input vis
+
+.decl state(x: symbol, y: symbol, z: symbol)
+.output state
+
+//arbitration order: e preceedes p
+.decl ao(x:number, y:number)
+.input ao
+
+.decl arbitration(e: number, p: number)
+
+arbitration(e, p) :- ao(e, p).
+arbitration(e, p) :- arbitration(e, y), ao(y, p).
+
+.decl laterAoOp(e: number, p: number)
+//There is a later remove operation on the same keys and value
+laterAoOp(e, p) :- op(e, _ ,x, y, z), op(p, "remove", x, y, z), arbitration(e, p), e!=p.
+//There is a later add operation on the same keys (value doesn't matter)
+laterAoOp(e, p) :- op(e, _,x, y, _), op(p, "add", x, y, _), arbitration(e, p), e!=p.
+
+.decl maxAoOp(e: number)
+maxAoOp(e) :- op(e, _,_, _, _), !laterAoOp(e, _).
+
+state(x, y, z) :- op(e, "add", x, y, z), maxAoOp(e).
+
+//For graphs we can have a Map where the remove can work on keys.
+//Map(List) would also be nice

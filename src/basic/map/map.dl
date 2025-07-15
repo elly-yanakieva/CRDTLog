@@ -1,0 +1,43 @@
+.decl op(e:number, y: symbol, key: symbol, value: symbol)
+.input op
+
+//x is visible to y
+.decl vis(x:number, y:number)
+.input vis
+
+.decl state(x: symbol, y: symbol)
+.output state
+
+//arbitration order: e preceedes p
+.decl ao(x:number, y:number)
+.input ao
+
+.decl visible(e:number, p: number)
+
+visible(e,p) :- vis(e,p).
+visible(e,p) :- visible(e,y), vis(y,p).
+
+.decl arbitration(e: number, p: number)
+
+arbitration(e, p) :- ao(e, p).
+arbitration(e, p) :- arbitration(e, y), ao(y, p).
+
+.decl laterVisOp(e:number, p:number)
+laterVisOp(e,p) :- op(e,_,x,_), op(p, _, x, _), visible(e,p), e!=p.
+
+.decl maxVisOp(e: number)
+maxVisOp(e) :- op(e, _, _, _), !laterVisOp(e, _).
+
+.decl laterAoOp(e: number, p: number)
+laterAoOp(e, p) :- op(e, _,x, _), op(p, _, x, _), arbitration(e, p), e!=p.
+
+.decl maxAoOp(e: number)
+maxAoOp(e) :- op(e, _,_, _), !laterAoOp(e, _).
+
+state(x, z) :- op(e, "add", x, z), maxAoOp(e).
+
+// How to perform tests? - generate facts (the input) - property based testing - property based generator (for Graphs - gmark)
+// Problem: the visibility relation and most importantly the arbitration order need to be correct!
+// How can we assure that?
+// What can we prove with this? How can we prove it?
+// We get convergence for free - due to souffles engine
