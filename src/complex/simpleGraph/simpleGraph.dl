@@ -64,6 +64,7 @@ nodeLabels(x, "") :- op(e, "addNode", x, z,_,_), op(p, "removeNodeV", x, z,_,_),
 .decl maxAoOpEdges(e: number)
 maxAoOpEdges(e) :- op(e, _, _, z,_,_), !laterAoOp(e, _,"removeEdgeK",_,_),!laterAoOp(e, _,"removeEdgeV", z,_). //, !laterAoOp(e, _, "removeEdgeK").
 
+//ToDo was wenn ein Knoten geloescht wird? Keine dangling edges. Nicht auf ao gehen - sondern conflict resolution hart einbauen
 edgeLabels(x, n1, n2, z) :- op(e, "addEdge", x, z,n1,n2), maxAoOpEdges(e).
 edgeLabels(x, n1, n2, "") :- op(e, "addEdge", x, z,n1,n2), op(p, "removeEdgeV", x, z,_,_), laterAoOp(e, p, _,_,_), !laterAoOp(e, _, "addEdge",_,_).
 
@@ -73,5 +74,3 @@ maxAoOpMD(e) :- op(e, _, _, _,z,_), !laterAoOp(e, _,"removeMDK",_,_), !laterAoOp
 
 metadata(x, k, z) :- op(e, "addMD", x, k, z,_), maxAoOpMD(e).
 metadata(x, k, "") :- op(e, "addMD", x, k, z,_), op(p, "removeMDV", x, k,z,_), laterAoOp(e, p, _,_,_), !laterAoOp(e, _, "addMD",_,_).
-
-//Questions: What if the set of values to a node or an edge is empty, does the node/edge still exist? What about the metadata?

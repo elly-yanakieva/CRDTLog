@@ -1,0 +1,146 @@
+/*
+The possible op are as follows:
+addColumn cid
+removeColumn cid
+
+addRow rid
+removeRow rid
+
+editCell cid rid content
+*/
+
+.decl op(e:symbol, y: symbol, id1: symbol, id2: symbol, content: symbol)
+.input op
+
+//x is visible to y
+.decl vis(x:symbol, y:symbol)
+.input vis
+
+//arbitration order: x preceedes y
+.decl ao(x:symbol, y:symbol)
+.input ao
+
+.decl columns(id: symbol)
+.output columns
+
+.decl rows(id: symbol)
+.output rows
+
+.decl content(id1: symbol, id2: symbol, content: symbol)
+.output content
+
+.decl keepColumns(id: symbol, stamp: symbol)
+.output keepColumns
+
+.decl keepRows(id: symbol, stamp: symbol)
+.output keepRows
+
+//arbitration order: e preceedes p
+.decl arbitration(e: symbol, p: symbol)
+
+arbitration(e, p) :- ao(e, p).
+arbitration(e, p) :- arbitration(e, y), ao(y, p).
+
+.decl visible(e:symbol, p: symbol)
+
+visible(e,p) :- vis(e,p).
+visible(e,p) :- visible(e,y), vis(y,p).
+
+//.decl concurrent(e:number, p: number)
+
+//concurrent(e,p) :- !visible(e,p), !visible(p,e).
+
+.decl laterAoOp(e: symbol, p: symbol)
+laterAoOp(e, p) :- op(e, _, x, _,_), op(p, _,x,_,_), arbitration(e, p), e!=p.
+
+.decl maxAoOp(e: symbol)
+maxAoOp(e) :- op(e, _, _, _, _), !laterAoOp(e, _).
+
+.decl laterAoOpEdit(e: symbol, p: symbol)
+laterAoOpEdit(e, p) :- op(e, _, x, y,_), op(p, _,x,y,_), arbitration(e, p), e!=p.
+
+.decl maxAoOpEdit(e: symbol)
+maxAoOpEdit(e) :- op(e, _, _, _, _), !laterAoOpEdit(e, _).
+
+.decl laterVisOp(e: symbol, p:symbol)
+laterVisOp(e,p) :- op(e, _, x, _,_), op(p, _,x,_,_), visible(e, p), e!=p.
+
+.decl maxVisOp(e: symbol)
+maxVisOp(e) :- op(e, _, _, _, _), !laterVisOp(e, _).
+
+
+.decl laterVisOpRow(e: symbol, p:symbol)
+laterVisOpRow(e,p) :- op(e, _, x, _,_), op(p, _,_,x,_),  visible(e, p), e!=p. //op(l, _, x, _, _), visible(e,l), e!=l,
+
+.decl laterVisOpEditColumn(e: symbol, p:symbol)
+laterVisOpEditColumn(e,p) :- op(e, _, x, _,_), op(p, _,x,_,_), visible(e, p), e!=p.
+
+
+.decl laterVisOpEditRow(e: symbol, p:symbol)
+laterVisOpEditRow(e,p) :- op(e, _, _, x,_), op(p, "editCell",_,x,_), visible(e, p), e!=p.
+
+.decl laterAoOpRow(e: symbol, p: symbol)
+laterAoOpRow(e, p) :- op(e, _, _, x,_), op(p, _,_,x,_), arbitration(e, p), e!=p.
+
+//.decl maxVisOpEdit(e: symbol)
+//maxVisOpEdit(e) :- op(e, _, _, _, _), !laterVisOpEdit(e, _).
+
+rows(x) :- op(_, "addRow", x, _,_).
+columns(x) :- op(_, "addColumn", x, _,_).
+content(y,x,c) :- op(e, "addRow", x, _,_), op(p, "addColumn", y, _,_), op(l, "editCell", y, x, c), visible(e,l), visible(p,l), maxAoOpEdit(l).
+
+/*
+Column A is in keepColumns if:
+1) A was last added and no other operation happened on A (addColumn was the maxAoOp) - the set value of A contains the addColumn id - OR
+2) The last visible operation (maxVisOp) on A is editCell - the set value of A contains the editCell id - OR
+3) A was added, and a removeColumn op is the maxAoOp - the set value of A is empty
+*/
+keepColumns(x, e) :- op(e, "addColumn", x, _,_), maxVisOp(e).
+keepColumns(x, e) :- op(p, "addColumn",x, _, _), op(e, "editCell", x, _,_), visible(p,e), e != p, !laterVisOpEditColumn(e, _).
+keepColumns(x, "") :- op(p, "addColumn", x, _,_),op(e, "removeColumn", x, _,_), visible(p,e), e != p,maxAoOp(e).
+
+keepRows(x, e) :- op(e, "addRow", x, _,_), !laterVisOpRow(e,_), maxVisOp(e).
+keepRows(x, e) :- op(p, "addRow",x, _, _), op(e, "editCell", _, x,_), visible(p,e), e != p, !laterVisOpEditRow(e, _).
+keepRows(x, "") :-  op(p, "addRow", x, _,_),op(e, "removeRow", x,_ ,_), visible(p,e), e != p,!laterAoOpRow(e,_).
+
+//ToDo document everything
+
+/*
+Thoughts:
+
+Implementation is neither state-based nor op-based CRDTs.
+It is an implementation of high-level CRDTs based on abstract executions.
+To prove it is a valid CRDTs, we need to prove SEC... right?
+The resulting state is the global state after execution of the abstract execution. The global state represents
+the state to which every replica will be when seeing those updates.
+So if the implementation converges to a global state, it means that every replica will converge
+to the same state... deterministically. SEC proven?
+*/
+
+/*
+Thoughts 2.0:
+
+There are no CRDT specific properties to prove? Because the implementation terminates, SEC is proven? Right?
+Need to prove: Why is this the lower bound of vis vs ao? (Everything can be solved by referring to the ao, because
+it gives a close to sequential execution, but we need to use it only where conflict resolution is necessary!
+e.g. LWW, EditWins etc.)
+What do we expect from the final state?
+- One cannot remove an entity, if it does not exist
+- If an entity is removed (last visible op on the key without
+*/
+
+
+/*
+Meeting notes 23.07.25:
+
+define the rules in datalog. What can I express as datalog constraints?
+Those that cannot be specified as constraints - specify as datalog properties (when can they be violated) - as tests for the violations.
+Specify the properties that the global state should hold - as datalog constraints.
+Document all that Im doing - compositional CRDTs - what are the (domain-specific) requirements that need to be upheld, can we specify that in datalog?
+Difference between Map and Spreadsheet? Can we specify this on datalog only?
+Can I do it for the base CRDTs? Can we get the check for the composition for free?
+(look up) abstract interpretation of CRDTs, like static analysis for CRDTs (use case for datalog)
+Later: think about externally proving this
+
+Document the questions - batch questions and have a quick call during summer
+*/

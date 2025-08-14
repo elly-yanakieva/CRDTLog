@@ -1,5 +1,5 @@
 1	add	a	Anna
 2	removeK	a	Charlie
 3	add	a	Banana
-4	removeV	a	Banana
+4	update	a remove    Banana
 5	add	a	David

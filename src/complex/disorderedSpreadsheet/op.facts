@@ -1,0 +1,8 @@
+1	addColumn	a	-1	-1
+2	addColumn	b	-1	-1
+3	addRow	1	-1	-1
+4	editCell	a	1	Anna
+5	editCell	b	1	Bob
+6	editCell	a	1	Annika
+7	removeColumn	b	-1	-1
+8	removeColumn	a	-1	-1
