@@ -1,0 +1,23 @@
+#include "mapLwwCommon.dl"
+
+//id, operation(write), value, register identifier
+.decl lwwOp(e: number, y: symbol, z: symbol, i: symbol)
+
+.input vis
+
+.input ao
+
+.decl arbitration(e: number, p: number)
+
+arbitration(e, p) :- ao(e, p).
+arbitration(e, p) :- arbitration(e, y), ao(y, p).
+
+.decl laterAoOp(e: number, p: number, n: symbol, s:symbol)
+laterAoOp(e, p, n,s) :- lwwOp(e, _, _, s), lwwOp(p, n, _, s), arbitration(e, p), e!=p.
+
+.decl maxAoOp(e: number, s:symbol)
+maxAoOp(e,s) :- lwwOp(e, _, _, s), !laterAoOp(e, _, "write", s).
+
+//Special identifier, value
+.decl lwwState(s: symbol, x: symbol)
+lwwState(s, x) :- lwwOp(e, "write", x, s), maxAoOp(e, s).

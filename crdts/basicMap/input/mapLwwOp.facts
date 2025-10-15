@@ -1,0 +1,5 @@
+1	put	write	a	1
+2	update	write	a	2
+3	put	write	b	1
+5	update	write	b	5
+4	remove	-1	b	-1

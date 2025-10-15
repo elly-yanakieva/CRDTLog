@@ -1,0 +1,23 @@
+//id, operation, value
+.decl setOp(e: number, y: symbol, x: symbol)
+.input setOp
+
+//y is visible to x
+.decl vis(x: number, y: number)
+.input vis
+
+.decl visible(e:number, p: number)
+visible(e,p) :- vis(e, p).
+visible(e,p) :- visible(e,y), vis(y, p).
+
+.decl laterVisOp(e:number, p:number)
+laterVisOp(e,p) :- setOp(e, _, x), setOp(p, _, x), visible(e, p), e!=p.
+
+.decl lastVisibleOp(e:number)
+lastVisibleOp(e) :- setOp(e, _, _), !laterVisOp(e, _).
+
+
+.decl setState(x: symbol)
+setState(x) :- setOp(e, "add", x), lastVisibleOp(e).
+.output setState
+

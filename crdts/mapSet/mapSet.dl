@@ -1,0 +1,27 @@
+#include "uwmap.dl"
+#include "awset.dl"
+
+//id, operation, nestedOp, key, value
+.decl mapSetOp(e: number, y: symbol, o: symbol, k: symbol, x: symbol)
+.input mapSetOp
+
+setOp(e, o, z, i) :- mapSetOp(e, "put", o, i, z).
+//update should be there only if there is a put beforehand
+setOp(e, o, z, i) :- mapSetOp(e, "update", o, i, z), visiblePut(e), !preVisRemove(e), !postVisRemove(e).
+
+.decl visiblePut(e: number)
+visiblePut(e) :- mapSetOp(e, _, _, i, _), mapSetOp(p, "put", "add", i, _), visible(p,e), p != e.
+
+.decl preVisRemove(e: number)
+preVisRemove(e) :- mapSetOp(e, _, _, i, _), mapSetOp(s, "remove",_, i, _), visible(s, e), e != s.
+
+.decl postVisRemove(e: number)
+postVisRemove(e) :- mapSetOp(e, _, _, i, _), mapSetOp(s, "remove",_, i, _), visible(e, s), e != s.
+
+
+mapOp(e,y,k,x) :- mapSetOp(e, y, _, k, x).
+
+.decl mapState(k: symbol, x: symbol)
+mapState(k, x) :- mapKeyState(k), setState(k,x).
+mapState(k, "") :- mapKeyState(k), !setState(k,_).
+.output mapState

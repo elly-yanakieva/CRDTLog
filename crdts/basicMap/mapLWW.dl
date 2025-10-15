@@ -1,0 +1,24 @@
+#include "uwmap.dl"
+#include "lwwregister.dl"
+
+//id, operation, nestedOp, key, value
+.decl mapLwwOp(e: number, y: symbol, o: symbol, k: symbol, x: symbol)
+.input mapLwwOp
+
+lwwOp(e, "write", z, i) :- mapLwwOp(e, "update", "write", i, z), visiblePut(e), !preVisRemove(e), !postVisRemove(e).
+lwwOp(e, "write", z, i) :- mapLwwOp(e, "put", "write", i, z), !postVisRemove(e).
+
+.decl visiblePut(e: number)
+visiblePut(e) :- mapLwwOp(e, _, _, i, _), mapLwwOp(p, "put", "write", i, _), visible(p,e), p != e.
+
+.decl preVisRemove(e: number)
+preVisRemove(e) :- mapLwwOp(e, _, _, i, _), mapLwwOp(s, "remove",_, i, _), visible(s, e), e != s.
+
+.decl postVisRemove(e: number)
+postVisRemove(e) :- mapLwwOp(e, _, _, i, _), mapLwwOp(s, "remove",_, i, _), visible(e, s), e != s.
+
+mapOp(e,y,k,x) :- mapLwwOp(e,y,_,k,x).
+
+.decl mapState(k: symbol, x: symbol)
+mapState(k, x) :- mapKeyState(k), lwwState(k, x).
+.output mapState

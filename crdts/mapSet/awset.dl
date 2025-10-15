@@ -1,0 +1,17 @@
+#include "mapSetCommon.dl"
+
+//id, operation, value, special identifier
+.decl setOp(e: number, y: symbol, x: symbol, s: symbol)
+
+.input vis
+
+.decl laterVisOpSet(e: number, p: number)
+laterVisOpSet(e, p) :- setOp(e, _, x, s), setOp(p, _, x, s), visible(e, p), e!=p.
+
+.decl lastVisibleOpSet(e: number)
+lastVisibleOpSet(e) :- setOp(e, _, _, _), !laterVisOpSet(e, _).
+
+
+.decl setState(s: symbol, x: symbol)
+setState(s,x) :- setOp(e, "add", x,s), lastVisibleOpSet(e).
+

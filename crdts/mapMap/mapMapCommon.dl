@@ -1,0 +1,5 @@
+#pragma once
+
+.decl vis(x: number, y: number)
+
+.decl ao(x: number, y: number)

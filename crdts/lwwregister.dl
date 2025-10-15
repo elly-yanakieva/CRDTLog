@@ -1,0 +1,27 @@
+//id, operation(write), value
+.decl lwwOp(e: number, y: symbol, z: symbol)
+.input lwwOp
+
+//x is visible to y
+.decl lwwVis(x: number, y: number)
+.input lwwVis
+
+//arbitration order: e preceedes p
+.decl lwwAo(x: number, y: number)
+.input lwwAo
+
+.decl arbitration(e: number, p: number)
+
+arbitration(e, p) :- lwwAo(e, p).
+arbitration(e, p) :- arbitration(e, y), lwwAo(y, p).
+
+.decl laterAoOp(e: number, p: number, n: symbol)
+laterAoOp(e, p, n) :- lwwOp(e, _, _), lwwOp(p, n, _), arbitration(e, p), e!=p.
+
+.decl maxAoOp(e: number)
+maxAoOp(e) :- lwwOp(e, _, _), !laterAoOp(e, _, "write").
+
+
+.decl lwwState(x: symbol)
+lwwState(x) :- lwwOp(e, "write", x), maxAoOp(e).
+.output lwwState

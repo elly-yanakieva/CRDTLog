@@ -1,0 +1,23 @@
+#include "mapLWW.dl"
+
+//id, operation, nestedOp, key, value
+.decl mapMapOp(e: number, o1: symbol, k1: symbol, o2: symbol, k2: symbol, o3: symbol, x: symbol)
+.input mapMapOp
+
+mapLwwOp(e, o2, o3, k2, x, k1) :- mapMapOp(e, "update", k1, o2, k2, o3, x), visiblePut(e), !preVisRemove(e), !postVisRemove(e).
+mapLwwOp(e, o2, o3, k2, x, k1) :- mapMapOp(e, "put", k1, o2, k2, o3, x), !postVisRemove(e).
+
+.decl visiblePut(e: number)
+visiblePut(e) :- mapMapOp(e, _, i, _, _, _, _), mapMapOp(p, "put", i, _,_,_, _), visible(p,e), p != e.
+
+.decl preVisRemove(e: number)
+preVisRemove(e) :- mapMapOp(e, _, i, _,_,_, _), mapMapOp(s, "remove",i,_,_,_, _), visible(s, e), e != s.
+
+.decl postVisRemove(e: number)
+postVisRemove(e) :- mapMapOp(e, _, i, _,_,_, _), mapMapOp(s, "remove",i, _,_,_, _), visible(e, s), e != s.
+
+outerMapOp(e,y,k1,x) :- mapMapOp(e,y,k1,_,_,_,x).
+
+.decl mapMapState(k1: symbol, k2: symbol, x: symbol)
+mapMapState(k1, k2, x) :- outerMapKeyState(k1), mapState(k2,x).
+.output mapMapState

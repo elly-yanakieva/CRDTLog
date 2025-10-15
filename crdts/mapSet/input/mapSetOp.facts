@@ -1,0 +1,8 @@
+1	put	add	a	1
+2	update	add	a	2
+3	update	add	a	3
+4	update	remove	a	1
+5	put	add	b	2
+6	remove	-1	b	-1
+7	update	add	b	4
+8	update	add	b	4
