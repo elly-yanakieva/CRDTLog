@@ -1,0 +1,19 @@
+#include "pwmap.dl"
+#include "lwwregister.dl"
+
+//id, operation, nestedOp, key, value, special identifying symbol
+.decl mapLwwOp(e: number, y: symbol, o: symbol, k: symbol, x: symbol, s: symbol)
+
+lwwOp(e, "write", z, cat(s,i)) :- mapLwwOp(e, "put", "write", i, z,s), !postVisRemoveMap(e).
+
+.decl postVisRemoveMap(e: number)
+postVisRemoveMap(e) :- mapLwwOp(e, _, _, i, _,_), mapLwwOp(s, "remove",_, i, _,_), visible(e, s), e != s.
+
+mapOp(e,y,k) :- mapLwwOp(e,y,_,k,_,_).
+
+//.decl mapState(k1: symbol, k2: symbol, x: symbol)
+//mapState(k1,k2, x) :- mapLwwOp(_, "put", _,k2,x, k1), mapKeyState(k2), lwwState(cat(k1,k2), x).
+
+
+.decl mapState(k1: symbol, x: symbol)
+mapState(k1,cat(k2, x)) :- mapLwwOp(_, "put", _,k2,x, k1), mapKeyState(k2), lwwState(cat(k1,k2), x).

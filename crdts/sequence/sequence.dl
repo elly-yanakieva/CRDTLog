@@ -1,0 +1,35 @@
+//id, operation, value, index
+.decl seqOp(e: number, y: symbol, x: symbol, i: number)
+.input seqOp
+
+.decl vis(x: number, y: number)
+.input vis
+
+.decl visible(e:number, p: number)
+visible(e,p) :- vis(e, p).
+visible(e,p) :- visible(e,y), vis(y, p).
+
+.decl ao(x: number, y: number)
+.input ao
+
+.decl arbitration(e:number, p: number)
+arbitration(e,p) :- ao(e, p).
+arbitration(e,p) :- arbitration(e,y), ao(y, p).
+
+.decl concurrent(e:number, p: number)
+concurrent(e,p) :- seqOp(e, _, _, _), seqOp(p, _ , _, _), !visible(p, e), !visible(e, p), e!=p.
+
+
+//Translation layer
+.decl seqOpConcurrent(e: number, y: symbol, x: symbol, i: number)
+seqOpConcurrent(e,y,x,i) :- seqOp(e, y, x, s1),  c = count : { seqOp(p, _, _, s2), concurrent(e, p), e != p, s1 > s2 },
+                            c1 = count : { seqOp(p, _, _, s2), concurrent(e, p), e != p, s1 = s2, arbitration(e,p) },
+                            i= s1+c+c1.
+
+.decl seqOpVisible(e: number, y: symbol, x: symbol, i: number)
+seqOpVisible(e,y,x,i) :- seqOpConcurrent(e, y, x, s1),  i = count : { visible(e, p), seqOpConcurrent(p,_,_, i1), i1 <= s1 }.
+
+//index, value
+.decl seqState(i: number, x: symbol)
+seqState(i, x) :- seqOp(e, "put", x, _), seqOpConcurrent(e, _, _, i1), seqOpVisible(e, _, _, i2), i = i1+i2.
+.output seqState

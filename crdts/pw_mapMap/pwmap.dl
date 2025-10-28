@@ -1,0 +1,34 @@
+#include "mapMapCommon.dl"
+
+//id, operation, key, value
+.decl mapOp(e: number, y: symbol, k: symbol)
+
+
+//id, operation, key, value
+.decl outerMapOp(e: number, y: symbol, k: symbol)
+
+.input vis
+
+.decl visible(e:number, p: number)
+visible(e,p) :- vis(e, p).
+visible(e,p) :- visible(e,y), vis(y, p).
+
+.decl laterVisOpMap(e: number, p: number)
+laterVisOpMap(e, p) :- mapOp(e, _, x), mapOp(p, "remove", x), visible(e, p), e!=p.
+
+.decl lastVisibleOpMap(e:number)
+lastVisibleOpMap(e) :- mapOp(e, _, _), !laterVisOpMap(e, _).
+
+.decl mapKeyState(x: symbol)
+mapKeyState(x) :- mapOp(e, "put", x), lastVisibleOpMap(e).
+
+//Outer Map
+
+.decl laterVisOpOuterMap(e: number, p: number)
+laterVisOpOuterMap(e, p) :- outerMapOp(e, _, x), outerMapOp(p, "remove", x), visible(e, p), e!=p.
+
+.decl lastVisibleOpOuterMap(e:number)
+lastVisibleOpOuterMap(e) :- outerMapOp(e, _, _), !laterVisOpOuterMap(e, _).
+
+.decl outerMapKeyState(x: symbol)
+outerMapKeyState(x) :- outerMapOp(e, "put", x), lastVisibleOpOuterMap(e).

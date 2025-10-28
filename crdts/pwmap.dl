@@ -1,0 +1,19 @@
+//id, operation, key, value
+.decl mapOp(e: number, y: symbol, k: symbol, x: symbol)
+
+.decl vis(x: number, y: number)
+.input vis
+
+.decl visible(e:number, p: number)
+visible(e,p) :- vis(e, p).
+visible(e,p) :- visible(e,y), vis(y, p).
+
+
+.decl laterVisOpMap(e: number, p: number)
+laterVisOpMap(e, p) :- mapOp(e, _, x, _), mapOp(p, "remove", x, _), visible(e, p), e!=p.
+
+.decl lastVisibleOpMap(e: number)
+lastVisibleOpMap(e) :- mapOp(e, _, _, _), !laterVisOpMap(e, _).
+
+.decl mapKeyState(x: symbol)
+mapKeyState(x) :- mapOp(e, "put", x, _), lastVisibleOpMap(e).
