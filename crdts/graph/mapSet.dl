@@ -1,0 +1,21 @@
+#include "uwmap.dl"
+#include "awset.dl"
+
+//id, operation, nestedOp, key, value
+.decl mapSetOp(e: symbol, y: symbol, o: symbol, k: symbol, x: symbol)
+//.input mapSetOp
+
+setOp(e, o, z, i) :- mapSetOp(e, "put", o, i, z), !postVisRemove(e).
+
+.decl postVisRemove(e: symbol)
+postVisRemove(e) :- mapSetOp(e, _, _, i, _), mapSetOp(s, "remove",_, i, _), visible(e, s), e != s, !concurrentPut(s,i).
+
+.decl concurrentPut(e: symbol,k: symbol)
+concurrentPut(e,k) :- mapSetOp(e, _, _, _,_), mapSetOp(s, "put", _, k, _), !visible(e, s),!visible(s, e), e != s.
+
+mapOp(e,y,k,x) :- mapSetOp(e, y, _, k, x).
+
+.decl mapState(k: symbol, x: symbol)
+mapState(k, x) :- mapKeyState(k), setState(k,x).
+mapState(k, "") :- mapKeyState(k), !setState(k,_).
+.output mapState

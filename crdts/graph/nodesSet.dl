@@ -1,0 +1,18 @@
+#include "mapSetCommon.dl"
+
+//id, operation, value
+.decl nodesOp(e: symbol, y: symbol, x: symbol)
+
+.input vis
+
+.decl laterVisOpNodes(e: symbol, o: symbol, v: symbol)
+laterVisOpNodes(e, o, x) :- nodesOp(e, o, x), nodesOp(p, _, x), visible(e, p), e!=p.
+
+.decl lastVisibleOpNodes(e: symbol, o: symbol, v: symbol)
+lastVisibleOpNodes(e, o, v) :- nodesOp(e, o, v), !laterVisOpNodes(e,o,v).
+
+
+.decl nodesState(x: symbol)
+nodesState(x) :- nodesOp(e, "add", x), lastVisibleOpNodes(e, "add", x).
+.output nodesState
+

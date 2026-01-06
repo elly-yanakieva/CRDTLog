@@ -1,0 +1,24 @@
+//A remove op is valid only when it does not have any incoming or outgoing connections
+#include "mapSet.dl"
+#include "nodesSet.dl"
+
+//id, operation, value1, value2
+//e.g. 1 addEdge n1 n2
+//     2 addNode n1 -1
+.decl graphOp(e: symbol, y: symbol, v1: symbol, v2: symbol)
+.input graphOp
+
+mapSetOp(e, "put", "add", v1, v2) :- graphOp(e, "addEdge", v1, v2).
+mapSetOp(e, "put", "remove", v1, v2) :- graphOp(e, "removeEdge", v1, v2).
+// Info: Both the absence of a node and an empty set mean there are no edges.
+
+.decl preVisAddNode(e: symbol, v: symbol)
+preVisAddNode(e,v) :- graphOp(e, _, _, _), graphOp(s, "addNode",v,_), visible(s, e), e != s.
+
+nodesOp(e, "add",v) :- graphOp(e, "addNode", v, _).
+nodesOp(e, "remove",v) :- graphOp(e, "removeNode", v, _).
+//check whether both nodes were added before and not removed in between
+nodesOp(e, "add",v) :- graphOp(e, "addEdge", v, _), preVisAddNode(e,v).
+nodesOp(e, "add",v) :- graphOp(e, "addEdge", _, v), preVisAddNode(e,v).
+//Do I need to check if the nodes was really added? Isnt this an assumption on correct input? The user cannot
+// add edges between inexistent nodes...

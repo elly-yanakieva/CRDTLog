@@ -1,0 +1,7 @@
+#pragma once
+
+.decl vis(x: symbol, y: symbol)
+
+.decl visible(e:symbol, p: symbol)
+visible(e,p) :- vis(e, p).
+visible(e,p) :- visible(e,y), vis(y, p).

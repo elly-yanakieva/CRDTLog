@@ -1,0 +1,7 @@
+1	addNode	n	-1
+2	addNode	m	-1
+3	addEdge	n	m
+4	addEdge	m	n
+5	removeEdge	m	n
+6	removeEdge	n	m
+7	removeNode	m	-1

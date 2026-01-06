@@ -1,0 +1,18 @@
+#include "mapSetCommon.dl"
+
+//id, operation, value
+.decl edgesOp(e: symbol, y: symbol, x: symbol)
+
+.input vis
+
+.decl laterVisOpEdges(e: symbol)
+laterVisOpEdges(e) :- edgesOp(e, _, x), edgesOp(p, _, x), visible(e, p), e!=p.
+
+.decl lastVisibleOpEdges(e: symbol)
+lastVisibleOpEdges(e) :- edgesOp(e, _, _), !laterVisOpEdges(e).
+
+
+.decl edgesState(x: symbol)
+edgesState(x) :- edgesOp(e, "add", x), lastVisibleOpEdges(e).
+.output edgesState
+

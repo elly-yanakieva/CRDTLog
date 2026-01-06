@@ -1,0 +1,20 @@
+#include "mapSetCommon.dl"
+
+//id, operation, key, value
+.decl mapOp(e: symbol, y: symbol, k: symbol, x: symbol)
+
+.input vis
+
+.decl laterVisOpMap(e: symbol, p: symbol)
+laterVisOpMap(e, p) :- mapOp(e, _, x, _), mapOp(p, "remove", x, _), visible(e, p), e!=p.
+
+.decl lastVisibleOpMap(e: symbol)
+lastVisibleOpMap(e) :- mapOp(e, _, _, _), !laterVisOpMap(e, _).
+
+//No visible remove after e and before p
+.decl midRemove(e: symbol, p: symbol)
+midRemove(e, p) :- mapOp(e, _, i, _), mapOp(s, "remove", i, _),  visible(s, e), e != s, mapOp(p, _, i, _),visible(p, s), p != s.
+
+.decl mapKeyState(x: symbol)
+mapKeyState(x) :- mapOp(e, "put", x, _), lastVisibleOpMap(e).
+mapKeyState(x) :- mapOp(p, "put", x, _),mapOp(e, "update", x, _), visible(p,e), lastVisibleOpMap(e), !midRemove(e,p).
