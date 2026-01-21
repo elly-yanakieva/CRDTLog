@@ -3,5 +3,3 @@
 3	addEdge	n	m
 4	addEdge	m	n
 5	removeEdge	m	n
-6	removeEdge	n	m
-7	removeNode	m	-1

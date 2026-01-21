@@ -34,6 +34,6 @@ nodes(k) :- graphOp(e, "addNode", k, _), postVisRemoveNode(e,k,s), concurrentAdd
 .output nodes
 
 .decl edges(n: symbol, m: symbol)
-edges(n,m) :- graphOp(e, "addEdge", n, m), !postVisRemoveEdge(e), !postVisRemoveNode(e,n,_), !postVisRemoveNode(e,m,_),
-              addNodeWithNoRemoveNodeInBetween(e,n), addNodeWithNoRemoveNodeInBetween(e,m).
+edges(n,m) :- graphOp(e, "addEdge", n, m), !postVisRemoveEdge(e), !postVisRemoveNode(e,n,_), !postVisRemoveNode(e,m,_).
+              //addNodeWithNoRemoveNodeInBetween(e,n), addNodeWithNoRemoveNodeInBetween(e,m).
 .output edges

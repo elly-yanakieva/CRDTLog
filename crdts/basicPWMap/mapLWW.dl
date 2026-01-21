@@ -5,12 +5,12 @@
 .decl mapLwwOp(e: number, y: symbol, o: symbol, k: symbol, x: symbol)
 .input mapLwwOp
 
-lwwOp(e, "write", z, i) :- mapLwwOp(e, "put", "write", i, z), !postVisRemove(e).
+lwwOp(e, "write", z, i) :- mapLwwOp(e, "put", "write", i, z). //, !postVisRemove(e).
 
 .decl postVisRemove(e: number)
 postVisRemove(e) :- mapLwwOp(e, _, _, i, _), mapLwwOp(s, "remove",_, i, _), visible(e, s), e != s.
 
-mapOp(e,y,k) :- mapLwwOp(e,y,_,k).
+mapOp(e,y,k) :- mapLwwOp(e,y,_,k, _).
 
 .decl mapState(k: symbol, x: symbol)
 mapState(k, x) :- mapKeyState(k), lwwState(k, x).

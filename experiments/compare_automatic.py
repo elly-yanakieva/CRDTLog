@@ -1,0 +1,316 @@
+import os
+import sys
+import shutil
+import subprocess
+from collections import Counter
+from pathlib import Path
+import difflib
+import time
+
+# ----------------------------
+# Configure paths
+# ----------------------------
+GRAPH_DIR = Path("graph")
+ABSTRACT_DIR = Path("graphAbstract")
+TESTS_DIR = Path("/home/elena/Documents/Exps/correctness/automatic/tests10_1000")          # contains 1..1000
+RESULTS_DIR = Path("correctness/automatic/test_results10_1000")  # will be created
+
+GRAPH_DL = GRAPH_DIR / "graph_automatic.dl"
+ABSTRACT_DL = ABSTRACT_DIR / "graph_automatic.dl"
+
+SOUFFLE_CMD = ["souffle"]
+NUM_TESTS = 1000
+
+
+# ----------------------------
+# Helpers
+# ----------------------------
+def run_souffle(program_path: Path, input_dir: Path, output_dir: Path) -> tuple[bool, str, float]:
+    """
+    Runs: souffle -F input_dir -D output_dir program_path
+    Returns (ok, message, seconds).
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    cmd = SOUFFLE_CMD + ["-F", str(input_dir), "-D", str(output_dir), str(program_path)]
+    t0 = time.perf_counter()
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+    except FileNotFoundError:
+        return False, (
+            "Could not find 'souffle' in PATH. "
+            "Install Soufflé or adjust SOUFFLE_CMD in the script."
+        ), 0.0
+    t1 = time.perf_counter()
+
+    if proc.returncode != 0:
+        msg = f"Command failed: {' '.join(cmd)}\n\nSTDOUT:\n{proc.stdout}\n\nSTDERR:\n{proc.stderr}\n"
+        return False, msg, (t1 - t0)
+
+    return True, "", (t1 - t0)
+
+
+def normalize_edge_line(line: str) -> str | None:
+    """
+    Normalizes an edge line from either:
+      - 'a,b'  (comma-separated)
+      - 'a\tb' (tab-separated)
+      - 'a b'  (space-separated)
+    into canonical 'a\\tb'.
+    Assumes directed edges; if undirected, sort (a,b) here.
+    """
+    parts = [p for p in line.replace(",", " ").split() if p]
+    if len(parts) < 2:
+        return None
+    a, b = parts[0], parts[1]
+    return f"{a}\t{b}"
+
+
+def read_csv_as_multiset(
+        path: Path,
+        ignore_singleton: bool = False,
+        normalize_line=None,
+) -> Counter:
+    """
+    Reads a file and returns a multiset of (optionally normalized) rows.
+    If ignore_singleton=True, lines with only one token are ignored.
+    If normalize_line is provided, it is applied to each non-empty line.
+    """
+    rows = []
+    if not path.exists():
+        return Counter()
+
+    with path.open("r", encoding="utf-8", errors="replace") as f:
+        for raw in f:
+            line = raw.strip()
+            if not line:
+                continue
+
+            if ignore_singleton:
+                tokens = [t for t in line.replace(",", " ").split() if t]
+                if len(tokens) <= 1:
+                    continue
+
+            if normalize_line is not None:
+                line = normalize_line(line)
+                if line is None:
+                    continue
+
+            rows.append(line)
+
+    return Counter(rows)
+
+
+def multiset_diff(a: Counter, b: Counter):
+    """
+    Returns (only_in_a, only_in_b) as lists of lines (with multiplicity),
+    sorted for stable diffs.
+    """
+    only_a = []
+    only_b = []
+
+    for line, cnt in (a - b).items():
+        only_a.extend([line] * cnt)
+
+    for line, cnt in (b - a).items():
+        only_b.extend([line] * cnt)
+
+    only_a.sort()
+    only_b.sort()
+    return only_a, only_b
+
+
+def write_unified_diff(file_a_label: str, lines_a: list[str], file_b_label: str, lines_b: list[str], out_path: Path):
+    """
+    Writes a unified diff between sorted normalized line lists.
+    """
+    diff = difflib.unified_diff(
+        lines_a,
+        lines_b,
+        fromfile=file_a_label,
+        tofile=file_b_label,
+        lineterm="",
+    )
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text("\n".join(diff) + ("\n" if lines_a or lines_b else ""), encoding="utf-8")
+
+
+def compare_files(
+        graph_out: Path,
+        abs_out: Path,
+        diff_out_path: Path,
+        ignore_singleton_graph: bool = False,
+        normalize_graph_line=None,
+        normalize_abs_line=None,
+) -> tuple[bool, str]:
+
+    a = read_csv_as_multiset(
+        graph_out,
+        ignore_singleton=ignore_singleton_graph,
+        normalize_line=normalize_graph_line,
+    )
+    b = read_csv_as_multiset(
+        abs_out,
+        ignore_singleton=False,
+        normalize_line=normalize_abs_line,
+    )
+
+    if a == b:
+        return True, ""
+
+    only_a, only_b = multiset_diff(a, b)
+
+    report_lines = []
+    report_lines.append(f"Mismatch comparing:\n  graph:         {graph_out}\n  graphAbstract: {abs_out}\n")
+
+    report_lines.append(f"Rows only in graph ({len(only_a)}):")
+    report_lines.extend(only_a[:200])
+    if len(only_a) > 200:
+        report_lines.append(f"... ({len(only_a) - 200} more)")
+    report_lines.append("")
+
+    report_lines.append(f"Rows only in graphAbstract ({len(only_b)}):")
+    report_lines.extend(only_b[:200])
+    if len(only_b) > 200:
+        report_lines.append(f"... ({len(only_b) - 200} more)")
+    report_lines.append("")
+
+    diff_out_path.parent.mkdir(parents=True, exist_ok=True)
+    diff_out_path.write_text("\n".join(report_lines) + "\n", encoding="utf-8")
+
+    write_unified_diff(
+        f"graph:{graph_out.name}",
+        sorted(a.elements()),
+        f"graphAbstract:{abs_out.name}",
+        sorted(b.elements()),
+        diff_out_path.with_suffix(".unified.diff"),
+    )
+
+    return False, f"Content mismatch: {graph_out.name} vs {abs_out.name}"
+
+
+# ----------------------------
+# Main
+# ----------------------------
+def main():
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    summary_path = RESULTS_DIR / "summary.tsv"
+    summary_lines = ["test_id\tstatus\treason"]
+
+    timing_path = RESULTS_DIR / "timing.tsv"
+    timing_lines = ["test_id\tgraph_seconds\tgraphAbstract_seconds\tstatus"]
+
+    graph_times = []
+    abstract_times = []
+
+    # sanity checks
+    if not GRAPH_DL.exists():
+        print(f"ERROR: missing {GRAPH_DL}")
+        sys.exit(1)
+    if not ABSTRACT_DL.exists():
+        print(f"ERROR: missing {ABSTRACT_DL}")
+        sys.exit(1)
+    if not TESTS_DIR.exists():
+        print(f"ERROR: missing {TESTS_DIR}")
+        sys.exit(1)
+
+    for i in range(1, NUM_TESTS + 1):
+        test_in = TESTS_DIR / str(i)
+        if not test_in.exists():
+            summary_lines.append(f"{i}\tFAIL\tMissing test input folder: {test_in}")
+            timing_lines.append(f"{i}\tNA\tNA\tMISSING_INPUT")
+            continue
+
+        # Per-test output folders
+        test_res_dir = RESULTS_DIR / str(i)
+        graph_out_dir = test_res_dir / "graph_out"
+        abs_out_dir = test_res_dir / "graphAbstract_out"
+        diff_dir = test_res_dir / "diffs"
+        diff_dir.mkdir(parents=True, exist_ok=True)
+
+        # Run both programs (time them)
+        ok1, msg1, t_graph = run_souffle(GRAPH_DL, test_in, graph_out_dir)
+        if ok1:
+            graph_times.append(t_graph)
+
+        ok2, msg2, t_abs = run_souffle(ABSTRACT_DL, test_in, abs_out_dir)
+        if ok2:
+            abstract_times.append(t_abs)
+
+        if not ok1:
+            (diff_dir / "run_graph_error.txt").write_text(msg1, encoding="utf-8")
+            summary_lines.append(f"{i}\tFAIL\tgraph run failed")
+            timing_lines.append(f"{i}\t{t_graph:.6f}\t{t_abs:.6f}\tFAIL_graph")
+            continue
+
+        if not ok2:
+            (diff_dir / "run_graphAbstract_error.txt").write_text(msg2, encoding="utf-8")
+            summary_lines.append(f"{i}\tFAIL\tgraphAbstract run failed")
+            timing_lines.append(f"{i}\t{t_graph:.6f}\t{t_abs:.6f}\tFAIL_graphAbstract")
+            continue
+
+        # Compare outputs
+        all_ok = True
+        reasons = []
+
+        # Graph outputs
+        g_nodes = graph_out_dir / "nodesState.csv"
+        g_edges_state = graph_out_dir / "edgesState.csv"
+
+        # GraphAbstract outputs
+        a_nodes = abs_out_dir / "nodes.csv"
+        a_edges = abs_out_dir / "edges.csv"
+
+        ok, reason = compare_files(g_nodes, a_nodes, diff_dir / "nodes_diff.txt")
+        if not ok:
+            all_ok = False
+            reasons.append(reason)
+
+        # Edge comparison: normalize comma/tab/space formats
+        ok, reason = compare_files(
+            g_edges_state,
+            a_edges,
+            diff_dir / "edges_diff.txt",
+            ignore_singleton_graph=False,
+            normalize_graph_line=normalize_edge_line,
+            normalize_abs_line=normalize_edge_line,
+            )
+        if not ok:
+            all_ok = False
+            reasons.append(reason)
+
+        timing_lines.append(
+            f"{i}\t{t_graph:.6f}\t{t_abs:.6f}\t" + ("OK" if all_ok else "FAIL_compare")
+        )
+
+        if all_ok:
+            summary_lines.append(f"{i}\tOK\t-")
+            shutil.rmtree(test_res_dir, ignore_errors=True)  # keep only fails
+        else:
+            summary_lines.append(f"{i}\tFAIL\t" + "; ".join(reasons))
+
+    # Averages (successful runs only)
+    def avg(xs):
+        return sum(xs) / len(xs) if xs else 0.0
+
+    avg_graph = avg(graph_times)
+    avg_abstract = avg(abstract_times)
+
+    # Append averages to timing file
+    timing_lines.append("")
+    timing_lines.append("# averages over successful runs")
+    timing_lines.append(f"AVG\t{avg_graph:.6f}\t{avg_abstract:.6f}\t-")
+    timing_lines.append(f"COUNT\t{len(graph_times)}\t{len(abstract_times)}\t-")
+
+    # Write final reports
+    summary_path.write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
+    timing_path.write_text("\n".join(timing_lines) + "\n", encoding="utf-8")
+
+    print(f"Timing written to: {timing_path}")
+    print(f"Done. Summary written to: {summary_path}")
+    print("Only failing tests keep output folders.")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,1 +1,0 @@
-[PASS] Output matches expected.

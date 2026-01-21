@@ -8,10 +8,10 @@
 .decl graphOp(e: symbol, y: symbol, v1: symbol, v2: symbol)
 .input graphOp
 
-edgesOp(e, "add",cat(v1,",",v2)) :- graphOp(e, "addEdge", v1, v2), containsNode(e,v1), containsNode(e,v2).
-edgesOp(e, "remove",cat(v1,",",v2)) :- graphOp(e, "removeEdge", v1, v2).
-edgesOp(cat(e,v1,v2), "remove",cat(v1,",",v2)) :- graphOp(e, "removeNode", v1, _), preVisAddIncomingEdge(e, v2).
-edgesOp(cat(e,v2,v1), "remove",cat(v2,",",v1)) :- graphOp(e, "removeNode", v1, _), preVisAddIncomingEdge(e, v2).
+edgesOp(e, "add",v1, v2) :- graphOp(e, "addEdge", v1, v2).
+edgesOp(e, "remove",v1, v2) :- graphOp(e, "removeEdge", v1, v2).
+edgesOp(e, "remove",v1, v2) :- graphOp(e, "removeNode", v1, _), preVisAddOutgoingEdge(e, v2).
+edgesOp(e, "remove",v2,v1) :- graphOp(e, "removeNode", v1, _), preVisAddIncomingEdge(e, v2).
 
 
 .decl preVisAddIncomingEdge(e: symbol, v: symbol)
@@ -42,5 +42,5 @@ edgeExists(e, v1) :- graphOp(s, "addEdge",v1, v2), containsNode(s,v1), containsN
 nodesOp(e, "add",v) :- graphOp(e, "addNode", v, _).
 nodesOp(e, "remove",v) :- graphOp(e, "removeNode", v, _).
 //check whether both nodes were added before and not removed in between
-nodesOp(e, "add",v) :- graphOp(e, "addEdge", v, v2), containsNode(e,v), containsNode(e,v2).
-nodesOp(e, "add",v) :- graphOp(e, "addEdge", v1, v), containsNode(e,v), containsNode(e,v1).
+nodesOp(e, "add",v) :- graphOp(e, "addEdge", v, v2).
+nodesOp(e, "add",v) :- graphOp(e, "addEdge", v1, v).
