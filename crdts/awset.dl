@@ -10,14 +10,15 @@
 visible(e,p) :- vis(e, p).
 visible(e,p) :- visible(e,y), vis(y, p).
 
-.decl laterVisOp(e:number, p:number)
-laterVisOp(e,p) :- setOp(e, _, x), setOp(p, _, x), visible(e, p), e!=p.
+.decl laterVisOp(e:number)
+laterVisOp(e) :- setOp(e, _, x), setOp(p, "remove", x), visible(e, p), e!=p.
 
 .decl lastVisibleOp(e:number)
-lastVisibleOp(e) :- setOp(e, _, _), !laterVisOp(e, _).
+lastVisibleOp(e) :- setOp(e, _, _), !laterVisOp(e).
 
 
 .decl setState(x: symbol)
-setState(x) :- setOp(e, "add", x), lastVisibleOp(e).
+//setState(x) :- setOp(e, "add", x), lastVisibleOp(e).
+setState(x) :- setOp(e, "add", x), !laterVisOp(e).
 .output setState
 

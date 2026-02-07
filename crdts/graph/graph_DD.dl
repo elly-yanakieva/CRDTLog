@@ -1,0 +1,25 @@
+//Detach delete
+#include "nodesSet.dl"
+#include "edgesSet.dl"
+
+//id, operation, value1, value2
+//e.g. 1 addEdge n1 n2
+//     2 addNode n1 -1
+.decl graphOp(e: symbol, y: symbol, v1: symbol, v2: symbol)
+.input graphOp
+
+edgesOp(e, "add",v1, v2) :- graphOp(e, "addEdge", v1, v2).
+edgesOp(e, "remove",v1, v2) :- graphOp(e, "removeEdge", v1, v2).
+edgesOp(e, "remove",v1, v2) :- graphOp(e, "removeNode", v1, _), preVisAddOutgoingEdge(e, v2).
+edgesOp(e, "remove",v2,v1) :- graphOp(e, "removeNode", v1, _), preVisAddIncomingEdge(e, v2).
+
+.decl preVisAddIncomingEdge(e: symbol, v: symbol)
+preVisAddIncomingEdge(e,v2) :- graphOp(e, _, v1, _), graphOp(s, "addEdge",v2, v1), visible(s, e), e != s.
+
+.decl preVisAddOutgoingEdge(e: symbol, v: symbol)
+preVisAddOutgoingEdge(e,v2) :- graphOp(e, _, v1, _), graphOp(s, "addEdge",v1, v2), visible(s, e), e != s.
+
+nodesOp(e, "add",v) :- graphOp(e, "addNode", v, _).
+nodesOp(e, "remove",v) :- graphOp(e, "removeNode", v, _).
+nodesOp(e, "add",v) :- graphOp(e, "addEdge", v, _).
+nodesOp(e, "add",v) :- graphOp(e, "addEdge", _, v).

@@ -1,5 +1,0 @@
-1	put	a	put	1	write	ab
-2	put	b	put	1	write	ab
-5	put	b	put	1	write	aa
-4	remove	c	put	1	write	aa
-3	put	c	put	1	write	ac

@@ -1,6 +1,7 @@
 #pragma once
 
 .decl vis(x: number, y: number)
+.input vis
 
 .decl visible(e:number, p: number)
 visible(e,p) :- vis(e, p).

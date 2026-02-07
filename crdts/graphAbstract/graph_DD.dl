@@ -11,8 +11,12 @@
 visible(e,p) :- vis(e, p).
 visible(e,p) :- visible(e,y), vis(y, p).
 
+
+.decl concurrent(e:number, p: number)
+concurrent(e,p) :- graphOp(e,_,_,_),graphOp(p,_,_,_),!visible(e,p), !visible(p, e), p != e.
+
 .decl postVisRemoveNode(e: number,k: symbol, s:number)
-postVisRemoveNode(e,k,s) :- graphOp(e, _, _, _), graphOp(s, "removeNode", k, _), visible(e, s), e != s, !concurrentAddEdge(s,k).
+postVisRemoveNode(e,k,s) :- graphOp(e, _, _, _), graphOp(s, "removeNode", k, _), visible(e, s), e != s.
 
 .decl postVisRemoveEdge(e: number)
 postVisRemoveEdge(e) :- graphOp(e, _, k1,k2), graphOp(s, "removeEdge", k1,k2), visible(e, s), e != s.
@@ -35,5 +39,4 @@ nodes(k) :- graphOp(e, "addNode", k, _), postVisRemoveNode(e,k,s), concurrentAdd
 
 .decl edges(n: symbol, m: symbol)
 edges(n,m) :- graphOp(e, "addEdge", n, m), !postVisRemoveEdge(e), !postVisRemoveNode(e,n,_), !postVisRemoveNode(e,m,_).
-              //addNodeWithNoRemoveNodeInBetween(e,n), addNodeWithNoRemoveNodeInBetween(e,m).
 .output edges

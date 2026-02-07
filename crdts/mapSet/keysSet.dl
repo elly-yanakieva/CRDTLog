@@ -1,0 +1,13 @@
+#include "mapSetCommon.dl"
+
+//id, operation, key, value
+.decl keysOp(e: number, y: symbol, k: symbol)
+
+.decl laterVisOpKeys(e: number, p: number)
+laterVisOpKeys(e, p) :- keysOp(e, _, x), keysOp(p, "remove", x), visible(e, p), e!=p.
+
+.decl lastVisibleOpKeys(e: number)
+lastVisibleOpKeys(e) :- keysOp(e, _, _), !laterVisOpKeys(e, _).
+
+.decl keysState(x: symbol)
+keysState(x) :- keysOp(e, "add", x), lastVisibleOpKeys(e).

@@ -1,6 +1,0 @@
-1	put	a	put	1	write	ab
-2	put	b	put	2	write	aa
-3	remove	a	-1	-1	-1	-1
-5	update	b	update	2	write	bb
-4	update	b	update	2	write	cc
-6	update	b	put	3	write	ac
