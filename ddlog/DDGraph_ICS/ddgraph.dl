@@ -1,0 +1,36 @@
+import common
+import nodes
+import edges
+
+// id, operation, value1, value2
+// e.g. ("1","addEdge","n1","n2")
+//      ("2","addNode","n1","-1")
+input relation GraphOp(e: EID, y: Sym, v1: Sym, v2: Sym)
+
+// --- Detach delete helpers---
+
+relation PreVisAddIncomingEdge(e: EID, v2: Sym)
+PreVisAddIncomingEdge(e, v2) :- GraphOp(e, _, v1, _), GraphOp(s, "addEdge", v2, v1), Visible(s, e), e != s.
+
+relation PreVisAddOutgoingEdge(e: EID, v2: Sym)
+PreVisAddOutgoingEdge(e, v2) :- GraphOp(e, _, v1, _), GraphOp(s, "addEdge", v1, v2), Visible(s, e), e != s.
+
+// --- Edge ops ---
+
+EdgesOp(e, "add",    v1, v2) :- GraphOp(e, "addEdge",    v1, v2).
+EdgesOp(e, "remove", v1, v2) :- GraphOp(e, "removeEdge", v1, v2).
+
+// Detach delete: removing node v1 removes all visible outgoing edges v1 -> v2
+EdgesOp(e, "remove", v1, v2) :- GraphOp(e, "removeNode", v1, _), PreVisAddOutgoingEdge(e, v2).
+
+// Detach delete: removing node v1 removes all visible incoming edges v2 -> v1
+EdgesOp(e, "remove", v2, v1) :- GraphOp(e, "removeNode", v1, _), PreVisAddIncomingEdge(e, v2).
+
+// --- Node ops ---
+
+NodesOp(e, "add",    v) :- GraphOp(e, "addNode",    v, _).
+NodesOp(e, "remove", v) :- GraphOp(e, "removeNode", v, _).
+
+// Adding an edge implies both endpoints are (re-)added
+NodesOp(e, "add", v) :- GraphOp(e, "addEdge", v, _).
+NodesOp(e, "add", v) :- GraphOp(e, "addEdge", _, v).

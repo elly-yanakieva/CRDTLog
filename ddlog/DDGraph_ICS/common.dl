@@ -1,0 +1,11 @@
+// Shared types
+typedef EID = s64
+typedef Sym = string
+
+// Visibility: x is visible to y
+input relation Vis(x: EID, y: EID)
+
+// Transitive closure
+relation Visible(e: EID, p: EID)
+Visible(e, p) :- Vis(e, p).
+Visible(e, p) :- Visible(e, y), Vis(y, p).

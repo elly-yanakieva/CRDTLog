@@ -1,0 +1,19 @@
+import common
+
+// id, operation, key, value
+relation KeysOp(e: EID, op: Sym, k: Sym, x: Sym)
+
+// later visible remove after e (same key)
+relation LaterVisOpMap(e: EID)
+LaterVisOpMap(e) :- KeysOp(e, _, k, _), KeysOp(p, "remove", k, _), Visible(e, p), e != p.
+
+relation LastVisibleOpMap(e: EID)
+LastVisibleOpMap(e) :- KeysOp(e, _, _, _), not LaterVisOpMap(e).
+
+// remove s between p and e (same key): p -> s -> e
+relation MidRemove(e: EID, p: EID)
+MidRemove(e, p) :- KeysOp(e, _, k, _), KeysOp(s, "remove", k, _), Visible(s, e), e != s, KeysOp(p, _, k, _), Visible(p, s), p != s.
+
+relation MapKeyState(k: Sym)
+MapKeyState(k) :- KeysOp(e, "put", k, _), LastVisibleOpMap(e).
+MapKeyState(k) :- KeysOp(p, "put",    k, _), KeysOp(e, "update", k, _), Visible(p, e), LastVisibleOpMap(e), not MidRemove(e, p).

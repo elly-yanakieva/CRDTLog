@@ -1,0 +1,14 @@
+import common
+
+// id, operation, value
+relation NodesOp(e: EID, op: Sym, x: Sym)
+
+// later visible op on same node id
+relation LaterVisOpNodes(e: EID, x: Sym)
+LaterVisOpNodes(e, x) :- NodesOp(e, _, x), NodesOp(p, _, x), Visible(e, p), e != p.
+
+relation LastVisibleOpNodes(e: EID, x: Sym)
+LastVisibleOpNodes(e, x) :- NodesOp(e, _, x), not LaterVisOpNodes(e, x).
+
+output relation NodesState(x: Sym)
+NodesState(x) :- NodesOp(e, "add", x), LastVisibleOpNodes(e, x).

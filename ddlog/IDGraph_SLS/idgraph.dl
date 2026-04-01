@@ -1,0 +1,32 @@
+// graph_ID.ddl (DDlog)
+
+typedef EID = s64
+typedef Sym = string
+
+// Inputs
+input relation GraphOp(e: EID, y: Sym, v1: Sym, v2: Sym)
+input relation Vis(x: EID, y: EID)
+
+// Visibility closure
+relation Visible(e: EID, p: EID)
+Visible(e, p) :- Vis(e, p).
+Visible(e, p) :- Visible(e, y), Vis(y, p).
+
+// There is an addEdge touching k that is concurrent with e
+relation ConcurrentAddEdge(e: EID, k: Sym)
+ConcurrentAddEdge(e, k) :- GraphOp(e, _, _, _), GraphOp(s, "addEdge", k, _), not Visible(e, s), not Visible(s, e), e != s.
+ConcurrentAddEdge(e, k) :- GraphOp(e, _, _, _), GraphOp(s, "addEdge", _, k), not Visible(e, s), not Visible(s, e), e != s.
+
+// Post-visible removeNode, with the extra guard !concurrentAddEdge(s,k)
+relation PostVisRemoveNode(e: EID, k: Sym, s: EID)
+PostVisRemoveNode(e, k, s) :- GraphOp(e, _, _, _), GraphOp(s, "removeNode", k, _), Visible(e, s), e != s, not ConcurrentAddEdge(s, k).
+
+relation PostVisRemoveEdge(e: EID)
+PostVisRemoveEdge(e) :- GraphOp(e, _, k1, k2), GraphOp(s, "removeEdge", k1, k2), Visible(e, s), e != s.
+
+// Outputs
+output relation Nodes(k: Sym)
+Nodes(k) :- GraphOp(e, "addNode", k, _), not PostVisRemoveNode(e, k, _).
+
+output relation Edges(n: Sym, m: Sym)
+Edges(n, m) :- GraphOp(e, "addEdge", n, m), not PostVisRemoveEdge(e).

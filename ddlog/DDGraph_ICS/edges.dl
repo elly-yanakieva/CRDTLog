@@ -1,0 +1,14 @@
+import common
+
+// id, operation, src, dst
+relation EdgesOp(e: EID, y: Sym, x: Sym, z: Sym)
+
+// e is overwritten by some later visible op on same (x,z)
+relation LaterVisOpEdges(e: EID)
+LaterVisOpEdges(e) :- EdgesOp(e, _, x, z), EdgesOp(p, _, x, z), Visible(e, p), e != p.
+
+relation LastVisibleOpEdges(e: EID)
+LastVisibleOpEdges(e) :- EdgesOp(e, _, _, _), not LaterVisOpEdges(e).
+
+output relation MapState(x: Sym, z: Sym)
+MapState(x, z) :- EdgesOp(e, "add", x, z), LastVisibleOpEdges(e).

@@ -1,0 +1,30 @@
+import keys
+import values
+import common
+// id, operation, nestedOp, key, value
+// (In your graph use-case: key=node, value=neighbor, nestedOp is add/remove)
+relation EdgesOp(e: EID, y: Sym, o: Sym, k: Sym, x: Sym)
+
+// A put is concurrent with e on same key k if neither sees the other
+relation ConcurrentPut(e: EID, k: Sym)
+ConcurrentPut(e, k) :- EdgesOp(e, _, _, _, _), EdgesOp(s, "put", _, k, _), not Visible(e, s), not Visible(s, e), e != s.
+
+     // postVisRemove(e): there exists a visible remove after e on same key,
+     // and that remove is not concurrent with any put on that key 
+
+relation PostVisRemove(e: EID)
+PostVisRemove(e) :- EdgesOp(e, _, _, k, _), EdgesOp(s, "remove", _, k, _), Visible(e, s), e != s, not ConcurrentPut(s, k).
+
+// ValuesOp is derived from EdgesOp put events, unless removed later
+ValuesOp(e, o, x, k) :- EdgesOp(e, "put", o, k, x), not PostVisRemove(e).
+
+// KeysOp view for keys
+KeysOp(e, y, k, x) :- EdgesOp(e, y, _, k, x).
+
+// existence check so we can write "not SetState(k, _)"
+relation HasSetState(k: Sym)
+HasSetState(k) :- SetState(k, _).
+
+output relation MapState(k: Sym, x: Sym)
+MapState(k, x) :- MapKeyState(k), SetState(k, x).
+MapState(k, "") :- MapKeyState(k), not HasSetState(k).

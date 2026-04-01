@@ -1,0 +1,14 @@
+// Common types + shared inputs.
+
+typedef EID = s64
+typedef Sym = string
+
+typedef OpK = A | D
+typedef OpV = W | NIL
+typedef OpM = U | R
+
+// Visibility: x is visible to y
+input relation Vis(x: EID, y: EID)
+
+// Arbitration order (for LWW): x precedes y
+input relation Ao(x: EID, y: EID)

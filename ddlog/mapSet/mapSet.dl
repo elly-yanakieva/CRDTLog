@@ -1,0 +1,17 @@
+import keys
+import values
+import common
+
+// (event id, op, nested op, key, value)
+input relation MapSetOp(e: EID, y: OpM, o: OpKV, k: Sym, x: Sym)
+
+// Soufflé: setOp(e, o, z, i) :- mapSetOp(e, "put", o, i, z).
+ValuesOp(e, o, x, k) :- MapSetOp(e, U, o, k, x).
+
+KeysOp(e, A, k) :- MapSetOp(e, U,    _, k, _).
+KeysOp(e, D, k) :- MapSetOp(e, R, _, k, _).
+
+// Output map state
+output relation MapState(k: Sym, x: Sym)
+MapState(k, x) :- KeysState(k), ValuesState(k, x).
+MapState(k, "") :- KeysState(k), not ValuesState(k,_).

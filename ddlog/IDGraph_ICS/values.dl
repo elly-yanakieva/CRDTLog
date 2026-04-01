@@ -1,0 +1,14 @@
+import common
+
+// id, operation, value, special identifier (key)
+relation ValuesOp(e: EID, op: Sym, x: Sym, s: Sym)
+
+// e has a later visible op on same (x, s)
+relation LaterVisOpSet(e: EID)
+LaterVisOpSet(e) :- ValuesOp(e, _, x, s), ValuesOp(p, _, x, s), Visible(e, p), e != p.
+
+relation LastVisibleOpSet(e: EID)
+LastVisibleOpSet(e) :- ValuesOp(e, _, _, _), not LaterVisOpSet(e).
+
+relation SetState(s: Sym, x: Sym)
+SetState(s, x) :- ValuesOp(e, "add", x, s), LastVisibleOpSet(e).

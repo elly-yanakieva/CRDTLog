@@ -1,0 +1,15 @@
+import mapCommon
+
+// (event id, op, value, register-id)
+// In your framework this is *derived* (produced by mapLWW)
+relation RegOp(e: EID, op: OpV, v: Sym, id: Sym)
+
+relation Arbitration(e: EID, p: EID)
+Arbitration(e, p) :- Ao(e, p).
+Arbitration(e, p) :- Arbitration(e, y), Ao(y, p).
+
+relation LaterAoWrite(e: EID, id: Sym)
+LaterAoWrite(e, id) :- RegOp(e, _, _, id), RegOp(p, W, _, id), Arbitration(e, p), e != p.
+
+relation RegState(id: Sym, v: Sym)
+RegState(id, v) :- RegOp(e, W, v, id), not LaterAoWrite(e, id).

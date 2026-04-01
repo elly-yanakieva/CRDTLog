@@ -1,0 +1,23 @@
+typedef EID = s64
+typedef Elem = string
+
+// operation as an enum instead of comparing strings.
+typedef Op = OpA | OpR
+
+// id, operation, value
+input relation SetOp(e: EID, op: Op, x: string)
+// If `e` is unique per operation, consider giving SetOp a primary key:
+// input relation SetOp(e: EID, op: Op, x: Elem) primary key (r) (r.e)
+
+input relation Vis(x: EID, y: EID)
+
+relation Visible(e: EID, p: EID)
+Visible(e, p) :- Vis(e, p).
+Visible(e, p) :- Visible(e, y), Vis(y, p).
+
+relation LaterVisOp(e: EID)
+LaterVisOp(e) :- SetOp(e, _, x), SetOp(p, OpR, x), Visible(e, p), e != p.
+
+// --- Output ---
+output relation SetState(x: string)
+SetState(x) :- SetOp(e, OpA, x), not LaterVisOp(e).

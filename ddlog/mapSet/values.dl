@@ -1,0 +1,15 @@
+import common
+
+// id, operation, value, special identifier (key)
+relation ValuesOp(e: EID, op: OpKV, x: Sym, s: Sym)
+
+// e has some later visible op on the same (value, key)
+relation LaterVisOpSet(e: EID)
+LaterVisOpSet(e) :- ValuesOp(e, _, x, s), ValuesOp(p, _, x, s), Visible(e, p), e != p.
+
+relation LastVisibleOpSet(e: EID)
+LastVisibleOpSet(e) :- ValuesOp(e, _, _, _), not LaterVisOpSet(e).
+
+// Set state: only "add" ops that are last-visible survive
+relation ValuesState(s: Sym, x: Sym)
+ValuesState(s, x) :- ValuesOp(e, A, x, s), LastVisibleOpSet(e).

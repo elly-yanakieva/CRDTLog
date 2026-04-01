@@ -1,0 +1,15 @@
+import mapCommon
+
+// Derived map operations (produced by mapLWW)
+relation KeysOp(e: EID, op: OpK, k: Sym, v: Sym)
+
+// Transitive visibility closure
+relation Visible(e: EID, p: EID)
+Visible(e, p) :- Vis(e, p).
+Visible(e, p) :- Visible(e, y), Vis(y, p).
+
+relation LaterVisRemove(e: EID)
+LaterVisRemove(e) :- KeysOp(e, _, k, _), KeysOp(p, D, k, _), Visible(e, p), e != p.
+
+relation MapKeyState(k: Sym)
+MapKeyState(k) :- KeysOp(e, A, k, _), not LaterVisRemove(e).

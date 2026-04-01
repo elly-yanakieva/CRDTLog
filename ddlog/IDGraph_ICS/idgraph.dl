@@ -1,0 +1,19 @@
+import edges
+import nodes
+import common
+
+// id, operation, value1, value2
+// e.g. 1 addEdge n1 n2
+//      2 addNode n1 -1
+input relation GraphOp(e: EID, y: Sym, v1: Sym, v2: Sym)
+
+// Edges: translate add/remove edge into edges::EdgesOp "put"/"remove" + nested "add"/"remove"
+EdgesOp(e, "put", "add",    v1, v2) :- GraphOp(e, "addEdge",    v1, v2).
+EdgesOp(e, "put", "remove", v1, v2) :- GraphOp(e, "removeEdge", v1, v2).
+
+// Nodes: explicit add/remove node
+NodesOp(e, "add",    v1) :- GraphOp(e, "addNode",    v1, _).
+NodesOp(e, "remove", v1) :- GraphOp(e, "removeNode", v1, _).
+// Nodes: adding an edge implies both endpoints are added
+NodesOp(e, "add", v1) :- GraphOp(e, "addEdge", v1, _).
+NodesOp(e, "add", v2) :- GraphOp(e, "addEdge", _, v2).

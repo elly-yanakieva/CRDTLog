@@ -1,0 +1,19 @@
+import keys
+import reg
+import mapCommon
+
+// (event id, op, nestedOp, key/register-id, value)
+input relation MapOp(e: EID, op: OpM, nested: OpV, k: Sym, v: Sym)
+
+relation PostVisRemove(e: EID)
+PostVisRemove(e) :- MapOp(e, _, _, k, _), MapOp(s, R, _, k, _), Visible(e, s), e != s.
+
+// Expose UWMap ops
+KeysOp(e, A, k, v) :- MapOp(e, U, _, k, v).
+KeysOp(e, D, k, v) :- MapOp(e, R, _, k, v).
+
+RegOp(e, W, v, k) :- MapOp(e, U, W, k, v), not PostVisRemove(e).
+
+// Output map state
+output relation MapState(k: Sym, v: Sym)
+MapState(k, v) :- MapKeyState(k), RegState(k, v).

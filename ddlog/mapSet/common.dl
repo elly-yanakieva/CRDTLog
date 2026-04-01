@@ -1,0 +1,12 @@
+typedef EID = s64
+typedef Sym = string
+
+typedef OpKV = A | D
+typedef OpM = U | R
+
+input relation Vis(x: EID, y: EID)
+
+// Visibility transitive closure
+relation Visible(e: EID, p: EID)
+Visible(e, p) :- Vis(e, p).
+Visible(e, p) :- Visible(e, y), Vis(y, p).

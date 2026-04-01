@@ -1,0 +1,47 @@
+// graph_DD.ddl (DDlog)
+
+typedef EID = s64
+typedef Sym = string
+
+// Inputs
+input relation GraphOp(e: EID, y: Sym, v1: Sym, v2: Sym)
+input relation Vis(x: EID, y: EID)
+
+// Visibility closure
+relation Visible(e: EID, p: EID)
+Visible(e, p) :- Vis(e, p).
+Visible(e, p) :- Visible(e, y), Vis(y, p).
+
+// Concurrent events: neither sees the other
+relation Concurrent(e: EID, p: EID)
+Concurrent(e, p) :- GraphOp(e, _, _, _), GraphOp(p, _, _, _), not Visible(e, p), not Visible(p, e), p != e.
+
+// A node-removal s is visible after e
+relation PostVisRemoveNode(e: EID, k: Sym, s: EID)
+PostVisRemoveNode(e, k, s) :- GraphOp(e, _, _, _), GraphOp(s, "removeNode", k, _), Visible(e, s), e != s.
+
+// An edge-removal is visible after e
+relation PostVisRemoveEdge(e: EID)
+PostVisRemoveEdge(e) :- GraphOp(e, _, k1, k2), GraphOp(s, "removeEdge", k1, k2), Visible(e, s), e != s.
+
+// There exists a removeNode(n) between e2 and e1: e2 -> s -> e1
+relation RemoveInBetween(e1: EID, e2: EID, n: Sym)
+RemoveInBetween(e1, e2, n) :- GraphOp(e1, _, _, _), GraphOp(e2, _, _, _), GraphOp(s, "removeNode", n, _), Visible(e2, s),
+                              Visible(s, e1), e1 != s, e2 != s, e1 != e2.
+
+// helper (present in Soufflé; not used later, but translated faithfully)
+relation AddNodeWithNoRemoveNodeInBetween(e: EID, n: Sym)
+AddNodeWithNoRemoveNodeInBetween(e, n) :- GraphOp(e, _, _, _), GraphOp(s, "addNode", n, _), Visible(s, e), e != s, not RemoveInBetween(e, s, n).
+
+// There is an addEdge touching k that is concurrent with e
+relation ConcurrentAddEdge(e: EID, k: Sym)
+ConcurrentAddEdge(e, k) :- GraphOp(e, _, _, _), GraphOp(s, "addEdge", k, _), not Visible(e, s), not Visible(s, e),e != s.
+ConcurrentAddEdge(e, k) :-  GraphOp(e, _, _, _),  GraphOp(s, "addEdge", _, k), not Visible(e, s), not Visible(s, e), e != s.
+
+// Outputs
+output relation Nodes(k: Sym)
+Nodes(k) :- GraphOp(e, "addNode", k, _), not PostVisRemoveNode(e, k, _).
+Nodes(k) :- GraphOp(e, "addNode", k, _), PostVisRemoveNode(e, k, s), ConcurrentAddEdge(s, k).
+
+output relation Edges(n: Sym, m: Sym)
+Edges(n, m) :- GraphOp(e, "addEdge", n, m), not PostVisRemoveEdge(e), not PostVisRemoveNode(e, n, _), not PostVisRemoveNode(e, m, _).

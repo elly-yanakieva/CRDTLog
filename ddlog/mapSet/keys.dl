@@ -1,0 +1,13 @@
+import common
+
+// id, operation, key
+relation KeysOp(e: EID, op: OpKV, k: Sym)
+
+relation LaterVisOpKeys(e: EID)
+LaterVisOpKeys(e) :- KeysOp(e, _, k), KeysOp(p, D, k), Visible(e, p), e != p.
+
+relation LastVisibleOpKeys(e: EID)
+LastVisibleOpKeys(e) :- KeysOp(e, _, _), not LaterVisOpKeys(e).
+
+relation KeysState(k: Sym)
+KeysState(k) :- KeysOp(e, A, k), LastVisibleOpKeys(e).
