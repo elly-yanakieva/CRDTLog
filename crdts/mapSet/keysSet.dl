@@ -1,6 +1,6 @@
 #include "mapSetCommon.dl"
 
-//id, operation, key, value
+//id, operation, key
 .decl keysOp(e: number, y: symbol, k: symbol)
 
 .decl laterVisOpKeys(e: number, p: number)
