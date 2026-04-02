@@ -23,7 +23,6 @@ concurrentAddEdge(e,k) :- graphOp(e, _, _, _), graphOp(s, "addEdge", _, k), !vis
 
 .decl nodes(k: symbol)
 nodes(k) :- graphOp(e, "addNode", k, _), !postVisRemoveNode(e,k,_).
-//nodes(k) :- graphOp(e, "addNode", k, _), postVisRemoveNode(e,k,s), concurrentAddEdge(s,k).
 .output nodes
 
 .decl edges(n: symbol, m: symbol)
